@@ -137,6 +137,27 @@
       border-color: #0071e3;
     }
 
+    .field input[type="text"] {
+      width: 100%;
+      border: 1.5px solid #d1d1d6;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 1rem;
+      color: #1d1d1f;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input[type="text"]:focus {
+      border-color: #0071e3;
+    }
+
+    .field .suffix {
+      font-size: 0.78rem;
+      color: #8e8e93;
+      margin-top: 4px;
+    }
+
     /* Button */
     button#extractBtn {
       width: 100%;
@@ -196,6 +217,12 @@
         <label for="endPage">End Page</label>
         <input type="number" id="endPage" min="1" placeholder="—" />
       </div>
+    </div>
+
+    <div class="field" style="margin-bottom: 28px;">
+      <label for="outputName">Output File Name</label>
+      <input type="text" id="outputName" placeholder="trimmed" />
+      <div class="suffix">.pdf will be appended automatically</div>
     </div>
 
     <button id="extractBtn" disabled>Extract Pages</button>
@@ -300,7 +327,8 @@
 
         const a = document.createElement('a');
         a.href = url;
-        a.download = `trimmed_pages_${start}-${end}.pdf`;
+        const name = document.getElementById('outputName').value.trim() || 'trimmed';
+        a.download = `${name}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
 
