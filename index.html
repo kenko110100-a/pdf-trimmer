@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDF Trimmer</title>
+  <title>PDF Tools</title>
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -13,18 +14,71 @@
       background: #f5f5f7;
       min-height: 100vh;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
     }
 
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 200px;
+      min-width: 200px;
+      background: #1c1c1e;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 12px;
+      gap: 4px;
+    }
+
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #636366;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0 12px;
+      margin-bottom: 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #aeaeb2;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .nav-item:hover { background: #2c2c2e; color: #fff; }
+
+    .nav-item.active {
+      background: #0071e3;
+      color: #fff;
+    }
+
+    .nav-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ── Main content ── */
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 24px;
+      overflow-y: auto;
+    }
+
+    .tool-panel { display: none; width: 100%; max-width: 520px; }
+    .tool-panel.active { display: block; }
+
+    /* ── Card ── */
     .card {
       background: #fff;
       border-radius: 18px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.10);
       padding: 40px 44px;
-      width: 100%;
-      max-width: 480px;
     }
 
     h1 {
@@ -40,7 +94,7 @@
       margin-bottom: 32px;
     }
 
-    /* Drop zone */
+    /* ── Drop zone ── */
     .drop-zone {
       border: 2px dashed #c7c7cc;
       border-radius: 12px;
@@ -52,10 +106,7 @@
       margin-bottom: 28px;
     }
 
-    .drop-zone.drag-over {
-      border-color: #0071e3;
-      background: #f0f6ff;
-    }
+    .drop-zone.drag-over { border-color: #0071e3; background: #f0f6ff; }
 
     .drop-zone input[type="file"] {
       position: absolute;
@@ -66,44 +117,12 @@
       height: 100%;
     }
 
-    .drop-icon {
-      font-size: 2.2rem;
-      margin-bottom: 8px;
-    }
+    .drop-icon { font-size: 2.2rem; margin-bottom: 8px; }
+    .drop-label { font-size: 0.95rem; color: #3a3a3c; font-weight: 500; }
+    .drop-hint { font-size: 0.8rem; color: #8e8e93; margin-top: 4px; }
+    .file-name { font-size: 0.85rem; color: #0071e3; margin-top: 8px; font-weight: 500; word-break: break-all; }
 
-    .drop-label {
-      font-size: 0.95rem;
-      color: #3a3a3c;
-      font-weight: 500;
-    }
-
-    .drop-hint {
-      font-size: 0.8rem;
-      color: #8e8e93;
-      margin-top: 4px;
-    }
-
-    .file-name {
-      font-size: 0.85rem;
-      color: #0071e3;
-      margin-top: 8px;
-      font-weight: 500;
-      word-break: break-all;
-    }
-
-    /* Page count badge */
-    .page-count {
-      display: none;
-      font-size: 0.8rem;
-      color: #6e6e73;
-      background: #f5f5f7;
-      border-radius: 6px;
-      padding: 4px 10px;
-      margin-top: 8px;
-      display: inline-block;
-    }
-
-    /* Range inputs */
+    /* ── Form fields ── */
     .range-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -121,7 +140,8 @@
       letter-spacing: 0.04em;
     }
 
-    .field input[type="number"] {
+    .field input[type="number"],
+    .field input[type="text"] {
       width: 100%;
       border: 1.5px solid #d1d1d6;
       border-radius: 10px;
@@ -133,36 +153,12 @@
       appearance: none;
     }
 
-    .field input[type="number"]:focus {
-      border-color: #0071e3;
-    }
+    .field input:focus { border-color: #0071e3; }
+    .field .suffix { font-size: 0.78rem; color: #8e8e93; margin-top: 4px; }
 
-    .field input[type="text"] {
+    /* ── Buttons ── */
+    .btn {
       width: 100%;
-      border: 1.5px solid #d1d1d6;
-      border-radius: 10px;
-      padding: 11px 14px;
-      font-size: 1rem;
-      color: #1d1d1f;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .field input[type="text"]:focus {
-      border-color: #0071e3;
-    }
-
-    .field .suffix {
-      font-size: 0.78rem;
-      color: #8e8e93;
-      margin-top: 4px;
-    }
-
-    /* Button */
-    button#extractBtn {
-      width: 100%;
-      background: #0071e3;
-      color: #fff;
       border: none;
       border-radius: 12px;
       padding: 14px;
@@ -172,16 +168,11 @@
       transition: background 0.2s, opacity 0.2s;
     }
 
-    button#extractBtn:hover:not(:disabled) {
-      background: #0077ed;
-    }
+    .btn-primary { background: #0071e3; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #0077ed; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    button#extractBtn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    /* Status / error */
+    /* ── Status ── */
     .status {
       margin-top: 16px;
       font-size: 0.88rem;
@@ -189,156 +180,556 @@
       min-height: 20px;
       font-weight: 500;
     }
-
     .status.error { color: #ff3b30; }
     .status.success { color: #34c759; }
     .status.info { color: #6e6e73; }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      display: none;
+      margin-top: 16px;
+      background: #e5e5ea;
+      border-radius: 6px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #0071e3;
+      border-radius: 6px;
+      width: 0%;
+      transition: width 0.2s;
+    }
+
+    /* ── Reading overlay ── */
+    .reader-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #fafafa;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .reader-overlay.open { display: flex; }
+
+    .reader-toolbar {
+      background: #fff;
+      border-bottom: 1px solid #e5e5ea;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .reader-toolbar h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1d1d1f;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reader-toolbar label {
+      font-size: 0.8rem;
+      color: #6e6e73;
+      white-space: nowrap;
+    }
+
+    .reader-toolbar input[type="range"] {
+      width: 80px;
+      accent-color: #0071e3;
+    }
+
+    .reader-toolbar .tb-btn {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tb-btn-print { background: #0071e3; color: #fff; }
+    .tb-btn-print:hover { background: #0077ed; }
+    .tb-btn-close { background: #e5e5ea; color: #1d1d1f; }
+    .tb-btn-close:hover { background: #d1d1d6; }
+
+    .reader-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 48px 24px 80px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .reader-content {
+      width: 100%;
+      max-width: 680px;
+      line-height: 1.75;
+      color: #1d1d1f;
+    }
+
+    .reader-content .r-heading {
+      font-weight: 700;
+      margin: 1.6em 0 0.4em;
+      color: #000;
+    }
+
+    .reader-content .r-para {
+      margin-bottom: 1em;
+      text-align: justify;
+    }
+
+    .reader-content .r-page-break {
+      border: none;
+      border-top: 1px dashed #d1d1d6;
+      margin: 2em 0;
+    }
+
+    @media print {
+      .reader-toolbar { display: none; }
+      .reader-body { padding: 0; overflow: visible; }
+      .reader-content { max-width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>PDF Trimmer</h1>
-    <p class="subtitle">Extract a page range from any PDF — runs entirely in your browser.</p>
 
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept="application/pdf" />
-      <div class="drop-icon">📄</div>
-      <div class="drop-label">Drop a PDF here or click to upload</div>
-      <div class="drop-hint">Your file never leaves your device</div>
-      <div class="file-name" id="fileName"></div>
-    </div>
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-title">PDF Tools</div>
+  <div class="nav-item active" data-tool="trimmer">
+    <span class="nav-icon">✂️</span> Trimmer
+  </div>
+  <div class="nav-item" data-tool="reformatter">
+    <span class="nav-icon">📖</span> Reformatter
+  </div>
+</nav>
 
-    <div class="range-row">
-      <div class="field">
-        <label for="startPage">Start Page</label>
-        <input type="number" id="startPage" min="1" placeholder="1" />
+<!-- Main -->
+<main class="main">
+
+  <!-- ── TRIMMER ── -->
+  <div class="tool-panel active" id="panel-trimmer">
+    <div class="card">
+      <h1>PDF Trimmer</h1>
+      <p class="subtitle">Extract a page range from any PDF — runs entirely in your browser.</p>
+
+      <div class="drop-zone" id="t-dropZone">
+        <input type="file" id="t-fileInput" accept="application/pdf" />
+        <div class="drop-icon">📄</div>
+        <div class="drop-label">Drop a PDF here or click to upload</div>
+        <div class="drop-hint">Your file never leaves your device</div>
+        <div class="file-name" id="t-fileName"></div>
       </div>
-      <div class="field">
-        <label for="endPage">End Page</label>
-        <input type="number" id="endPage" min="1" placeholder="—" />
+
+      <div class="range-row">
+        <div class="field">
+          <label for="t-startPage">Start Page</label>
+          <input type="number" id="t-startPage" min="1" placeholder="1" />
+        </div>
+        <div class="field">
+          <label for="t-endPage">End Page</label>
+          <input type="number" id="t-endPage" min="1" placeholder="—" />
+        </div>
       </div>
-    </div>
 
-    <div class="field" style="margin-bottom: 28px;">
-      <label for="outputName">Output File Name</label>
-      <input type="text" id="outputName" placeholder="trimmed" />
-      <div class="suffix">.pdf will be appended automatically</div>
-    </div>
+      <div class="field" style="margin-bottom: 28px;">
+        <label for="t-outputName">Output File Name</label>
+        <input type="text" id="t-outputName" placeholder="trimmed" />
+        <div class="suffix">.pdf will be appended automatically</div>
+      </div>
 
-    <button id="extractBtn" disabled>Extract Pages</button>
-    <div class="status info" id="status"></div>
+      <button id="t-extractBtn" class="btn btn-primary" disabled>Extract Pages</button>
+      <div class="status info" id="t-status"></div>
+    </div>
   </div>
 
-  <script>
-    const { PDFDocument } = PDFLib;
+  <!-- ── REFORMATTER ── -->
+  <div class="tool-panel" id="panel-reformatter">
+    <div class="card">
+      <h1>PDF Reformatter</h1>
+      <p class="subtitle">Convert dense academic PDFs into a clean, readable single-column view.</p>
 
-    let pdfBytes = null;
-    let totalPages = 0;
+      <div class="drop-zone" id="r-dropZone">
+        <input type="file" id="r-fileInput" accept="application/pdf" />
+        <div class="drop-icon">📑</div>
+        <div class="drop-label">Drop a PDF here or click to upload</div>
+        <div class="drop-hint">Works best with standard 2-column academic papers</div>
+        <div class="file-name" id="r-fileName"></div>
+      </div>
 
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const fileNameEl = document.getElementById('fileName');
-    const startPageEl = document.getElementById('startPage');
-    const endPageEl = document.getElementById('endPage');
-    const extractBtn = document.getElementById('extractBtn');
-    const statusEl = document.getElementById('status');
+      <button id="r-reformatBtn" class="btn btn-primary" disabled>Reformat for Reading</button>
 
-    function setStatus(msg, type = 'info') {
-      statusEl.textContent = msg;
-      statusEl.className = 'status ' + type;
+      <div class="progress-wrap" id="r-progressWrap">
+        <div class="progress-bar" id="r-progressBar"></div>
+      </div>
+
+      <div class="status info" id="r-status"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Reading overlay -->
+<div class="reader-overlay" id="readerOverlay">
+  <div class="reader-toolbar">
+    <h2 id="readerTitle">Reformatted PDF</h2>
+    <label>Font size
+      <input type="range" id="fontSizeSlider" min="14" max="24" value="17" />
+    </label>
+    <button class="tb-btn tb-btn-print" onclick="window.print()">Print / Save PDF</button>
+    <button class="tb-btn tb-btn-close" id="closeReader">Close</button>
+  </div>
+  <div class="reader-body">
+    <div class="reader-content" id="readerContent"></div>
+  </div>
+</div>
+
+<script>
+// ── pdf.js worker ──
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── Nav ──
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('panel-' + item.dataset.tool).classList.add('active');
+  });
+});
+
+// ════════════════════════════════════════════
+// TRIMMER
+// ════════════════════════════════════════════
+(function () {
+  const { PDFDocument } = PDFLib;
+  let pdfBytes = null, totalPages = 0;
+
+  const dropZone   = document.getElementById('t-dropZone');
+  const fileInput  = document.getElementById('t-fileInput');
+  const fileNameEl = document.getElementById('t-fileName');
+  const startEl    = document.getElementById('t-startPage');
+  const endEl      = document.getElementById('t-endPage');
+  const extractBtn = document.getElementById('t-extractBtn');
+  const statusEl   = document.getElementById('t-status');
+
+  function setStatus(msg, type = 'info') {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + type;
+  }
+
+  async function loadFile(file) {
+    if (!file || file.type !== 'application/pdf') {
+      setStatus('Please upload a valid PDF file.', 'error'); return;
     }
-
-    function updateBtn() {
-      extractBtn.disabled = !pdfBytes;
-    }
-
-    async function loadFile(file) {
-      if (!file || file.type !== 'application/pdf') {
-        setStatus('Please upload a valid PDF file.', 'error');
-        return;
-      }
-      const buffer = await file.arrayBuffer();
-      pdfBytes = new Uint8Array(buffer);
-
-      try {
-        const doc = await PDFDocument.load(pdfBytes);
-        totalPages = doc.getPageCount();
-        fileNameEl.textContent = file.name;
-        endPageEl.placeholder = totalPages;
-        endPageEl.max = totalPages;
-        startPageEl.max = totalPages;
-        setStatus(`Loaded — ${totalPages} page${totalPages !== 1 ? 's' : ''}`, 'info');
-        updateBtn();
-      } catch {
-        setStatus('Could not read this PDF. Is it password-protected?', 'error');
-        pdfBytes = null;
-        updateBtn();
-      }
-    }
-
-    fileInput.addEventListener('change', e => {
-      if (e.target.files[0]) loadFile(e.target.files[0]);
-    });
-
-    dropZone.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropZone.classList.add('drag-over');
-    });
-
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      const file = e.dataTransfer.files[0];
-      if (file) loadFile(file);
-    });
-
-    extractBtn.addEventListener('click', async () => {
-      if (!pdfBytes) return;
-
-      const start = parseInt(startPageEl.value) || 1;
-      const end = parseInt(endPageEl.value) || totalPages;
-
-      if (start < 1 || end < 1 || start > end) {
-        setStatus('Invalid page range. Start must be ≤ End.', 'error');
-        return;
-      }
-      if (end > totalPages) {
-        setStatus(`This PDF only has ${totalPages} pages.`, 'error');
-        return;
-      }
-
-      setStatus('Extracting…', 'info');
+    const buffer = await file.arrayBuffer();
+    pdfBytes = new Uint8Array(buffer);
+    try {
+      const doc = await PDFDocument.load(pdfBytes);
+      totalPages = doc.getPageCount();
+      fileNameEl.textContent = file.name;
+      endEl.placeholder = totalPages;
+      endEl.max = totalPages;
+      startEl.max = totalPages;
+      setStatus(`Loaded — ${totalPages} page${totalPages !== 1 ? 's' : ''}`, 'info');
+      extractBtn.disabled = false;
+    } catch {
+      setStatus('Could not read this PDF. Is it password-protected?', 'error');
+      pdfBytes = null;
       extractBtn.disabled = true;
+    }
+  }
 
-      try {
-        const srcDoc = await PDFDocument.load(pdfBytes);
-        const newDoc = await PDFDocument.create();
-        const indices = [];
-        for (let i = start - 1; i <= end - 1; i++) indices.push(i);
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
 
-        const copied = await newDoc.copyPages(srcDoc, indices);
-        copied.forEach(p => newDoc.addPage(p));
+  extractBtn.addEventListener('click', async () => {
+    if (!pdfBytes) return;
+    const start = parseInt(startEl.value) || 1;
+    const end   = parseInt(endEl.value)   || totalPages;
 
-        const outBytes = await newDoc.save();
-        const blob = new Blob([outBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
+    if (start < 1 || end < 1 || start > end) {
+      setStatus('Invalid page range. Start must be ≤ End.', 'error'); return;
+    }
+    if (end > totalPages) {
+      setStatus(`This PDF only has ${totalPages} pages.`, 'error'); return;
+    }
 
-        const a = document.createElement('a');
-        a.href = url;
-        const name = document.getElementById('outputName').value.trim() || 'trimmed';
-        a.download = `${name}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
+    setStatus('Extracting…', 'info');
+    extractBtn.disabled = true;
+    try {
+      const srcDoc = await PDFDocument.load(pdfBytes);
+      const newDoc = await PDFDocument.create();
+      const indices = [];
+      for (let i = start - 1; i <= end - 1; i++) indices.push(i);
+      const copied = await newDoc.copyPages(srcDoc, indices);
+      copied.forEach(p => newDoc.addPage(p));
+      const outBytes = await newDoc.save();
 
-        setStatus(`Done — pages ${start}–${end} downloaded.`, 'success');
-      } catch (err) {
-        setStatus('Something went wrong: ' + err.message, 'error');
-      } finally {
-        extractBtn.disabled = false;
+      const blob = new Blob([outBytes], { type: 'application/pdf' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      const name = document.getElementById('t-outputName').value.trim() || 'trimmed';
+      a.download = `${name}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus(`Done — pages ${start}–${end} downloaded.`, 'success');
+    } catch (err) {
+      setStatus('Something went wrong: ' + err.message, 'error');
+    } finally {
+      extractBtn.disabled = false;
+    }
+  });
+})();
+
+// ════════════════════════════════════════════
+// REFORMATTER
+// ════════════════════════════════════════════
+(function () {
+  let pdfBuffer = null;
+  let sourceFileName = '';
+
+  const dropZone    = document.getElementById('r-dropZone');
+  const fileInput   = document.getElementById('r-fileInput');
+  const fileNameEl  = document.getElementById('r-fileName');
+  const reformatBtn = document.getElementById('r-reformatBtn');
+  const statusEl    = document.getElementById('r-status');
+  const progressWrap= document.getElementById('r-progressWrap');
+  const progressBar = document.getElementById('r-progressBar');
+
+  function setStatus(msg, type = 'info') {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + type;
+  }
+
+  function setProgress(pct) {
+    progressWrap.style.display = 'block';
+    progressBar.style.width = pct + '%';
+    if (pct >= 100) setTimeout(() => { progressWrap.style.display = 'none'; }, 400);
+  }
+
+  async function loadFile(file) {
+    if (!file || file.type !== 'application/pdf') {
+      setStatus('Please upload a valid PDF file.', 'error'); return;
+    }
+    pdfBuffer = await file.arrayBuffer();
+    sourceFileName = file.name;
+    fileNameEl.textContent = file.name;
+    setStatus('Ready to reformat.', 'info');
+    reformatBtn.disabled = false;
+  }
+
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+
+  reformatBtn.addEventListener('click', async () => {
+    if (!pdfBuffer) return;
+    reformatBtn.disabled = true;
+    setStatus('Analysing layout…', 'info');
+    setProgress(0);
+
+    try {
+      const sections = await extractSections(pdfBuffer, (pct) => {
+        setStatus(`Processing… ${Math.round(pct)}%`, 'info');
+        setProgress(pct);
+      });
+
+      setProgress(100);
+      setStatus('Done! Opening reading view.', 'success');
+      openReader(sections, sourceFileName);
+    } catch (err) {
+      setStatus('Error: ' + err.message, 'error');
+      console.error(err);
+    } finally {
+      reformatBtn.disabled = false;
+    }
+  });
+
+  // ── Core extraction ──
+  async function extractSections(buffer, onProgress) {
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const numPages = pdf.numPages;
+    const sections = [];
+
+    for (let p = 1; p <= numPages; p++) {
+      onProgress(((p - 1) / numPages) * 100);
+
+      const page = await pdf.getPage(p);
+      const vp   = page.getViewport({ scale: 1 });
+      const tc   = await page.getTextContent({ includeMarkedContent: false });
+
+      const pageH = vp.height;
+      const pageW = vp.width;
+
+      // Normalise items: flip y so top=0
+      const items = tc.items
+        .filter(it => it.str && it.str.trim().length > 0)
+        .map(it => ({
+          str:      it.str,
+          x:        it.transform[4],
+          y:        pageH - it.transform[5],
+          w:        it.width,
+          fontSize: Math.abs(it.transform[3]),
+          hasEOL:   it.hasEOL,
+        }));
+
+      if (items.length === 0) continue;
+
+      // ── Column detection ──
+      // Trim top/bottom 10% to ignore headers/footers for this decision
+      const ySorted  = items.map(i => i.y).sort((a,b) => a - b);
+      const yMin     = ySorted[Math.floor(ySorted.length * 0.1)];
+      const yMax     = ySorted[Math.floor(ySorted.length * 0.9)];
+      const midItems = items.filter(i => i.y >= yMin && i.y <= yMax);
+
+      const midX     = pageW / 2;
+      const leftCnt  = midItems.filter(i => i.x + i.w * 0.5 < midX).length;
+      const rightCnt = midItems.filter(i => i.x + i.w * 0.5 >= midX).length;
+      const ratio    = midItems.length > 0 ? Math.min(leftCnt, rightCnt) / Math.max(leftCnt, rightCnt, 1) : 0;
+      const twoCol   = leftCnt > 8 && rightCnt > 8 && ratio > 0.25;
+
+      // ── Sort into reading order ──
+      let ordered;
+      if (twoCol) {
+        const left  = items.filter(i => i.x + i.w * 0.5 < midX).sort((a,b) => a.y - b.y || a.x - b.x);
+        const right = items.filter(i => i.x + i.w * 0.5 >= midX).sort((a,b) => a.y - b.y || a.x - b.x);
+        ordered = [...left, ...right];
+      } else {
+        ordered = [...items].sort((a,b) => a.y - b.y || a.x - b.x);
       }
+
+      // ── Group into visual lines (items sharing similar y) ──
+      const lines = [];
+      let curLine = [ordered[0]];
+      for (let i = 1; i < ordered.length; i++) {
+        if (Math.abs(ordered[i].y - curLine[0].y) < 4) {
+          curLine.push(ordered[i]);
+        } else {
+          curLine.sort((a,b) => a.x - b.x); // left-to-right within line
+          lines.push(curLine);
+          curLine = [ordered[i]];
+        }
+      }
+      curLine.sort((a,b) => a.x - b.x);
+      lines.push(curLine);
+
+      // ── Median font size for heading detection ──
+      const allFonts = items.map(i => i.fontSize).sort((a,b) => a - b);
+      const median   = allFonts[Math.floor(allFonts.length * 0.5)] || 10;
+
+      // ── Group lines into paragraphs ──
+      const paras = [];
+      let curPara = [lines[0]];
+
+      for (let i = 1; i < lines.length; i++) {
+        const prevY = lines[i-1][0].y;
+        const currY = lines[i][0].y;
+        const typicalLineH = (lines[i][0].fontSize || median) * 1.6;
+        if (currY - prevY > typicalLineH * 1.5) {
+          paras.push(curPara);
+          curPara = [lines[i]];
+        } else {
+          curPara.push(lines[i]);
+        }
+      }
+      paras.push(curPara);
+
+      // ── Convert paragraphs to sections ──
+      for (const para of paras) {
+        const flatItems = para.flat();
+        const avgSize   = flatItems.reduce((s,it) => s + it.fontSize, 0) / flatItems.length;
+
+        // Build text: join items within a line, handle soft hyphens across lines
+        let text = '';
+        for (let li = 0; li < para.length; li++) {
+          const lineText = para[li].map(it => it.str).join('');
+          if (li === 0) {
+            text = lineText;
+          } else {
+            const endsHyphen = text.endsWith('-');
+            const nextLower  = lineText.length > 0 && lineText[0] === lineText[0].toLowerCase() && lineText[0] !== lineText[0].toUpperCase();
+            if (endsHyphen && nextLower) {
+              text = text.slice(0, -1) + lineText; // de-hyphenate
+            } else {
+              text += ' ' + lineText;
+            }
+          }
+        }
+
+        text = text.trim();
+        if (!text) continue;
+
+        // Heading heuristics: larger font, short, or ALL CAPS short line
+        const isHeading = (avgSize > median * 1.2 && para.length <= 3) ||
+                          (para.length === 1 && text.length < 80 && avgSize >= median * 1.05) ||
+                          (text === text.toUpperCase() && text.length < 60 && /[A-Z]/.test(text));
+
+        sections.push({ type: isHeading ? 'heading' : 'para', text, fontSize: avgSize, page: p });
+      }
+
+      // Page break marker
+      if (p < numPages) sections.push({ type: 'pagebreak', page: p });
+    }
+
+    onProgress(100);
+    return sections;
+  }
+
+  // ── Reader ──
+  function openReader(sections, filename) {
+    const overlay   = document.getElementById('readerOverlay');
+    const content   = document.getElementById('readerContent');
+    const titleEl   = document.getElementById('readerTitle');
+    const slider    = document.getElementById('fontSizeSlider');
+
+    titleEl.textContent = filename;
+    content.innerHTML = '';
+
+    for (const sec of sections) {
+      if (sec.type === 'pagebreak') {
+        const hr = document.createElement('hr');
+        hr.className = 'r-page-break';
+        content.appendChild(hr);
+      } else if (sec.type === 'heading') {
+        const el = document.createElement('h2');
+        el.className = 'r-heading';
+        el.textContent = sec.text;
+        content.appendChild(el);
+      } else {
+        const el = document.createElement('p');
+        el.className = 'r-para';
+        el.textContent = sec.text;
+        content.appendChild(el);
+      }
+    }
+
+    slider.addEventListener('input', () => {
+      content.style.fontSize = slider.value + 'px';
     });
-  </script>
+    content.style.fontSize = slider.value + 'px';
+
+    overlay.classList.add('open');
+    document.getElementById('closeReader').onclick = () => overlay.classList.remove('open');
+  }
+})();
+</script>
 </body>
 </html>
