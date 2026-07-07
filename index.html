@@ -306,9 +306,14 @@
     }
 
     @media print {
-      .reader-toolbar { display: none; }
-      .reader-body { padding: 0; overflow: visible; }
-      .reader-content { max-width: 100%; }
+      /* Hide everything except the reading content */
+      body > * { display: none !important; }
+      .reader-overlay { display: block !important; position: static !important; height: auto !important; background: #fff; }
+      .reader-toolbar { display: none !important; }
+      .reader-body { overflow: visible !important; padding: 0 !important; height: auto !important; display: block !important; }
+      .reader-content { max-width: 100% !important; font-size: 12pt !important; }
+      .r-figure img, .r-math img { max-width: 100% !important; break-inside: avoid; }
+      .r-heading { break-after: avoid; }
     }
   </style>
 </head>
